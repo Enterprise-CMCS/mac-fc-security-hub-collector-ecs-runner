@@ -22,7 +22,7 @@
     "mountPoints": [],
     "volumesFrom": [],
     "entryPoint": [
-            "./scriptRunner.sh"
+            "./profiles/scriptRunner.sh"
     ]
   }
 ]

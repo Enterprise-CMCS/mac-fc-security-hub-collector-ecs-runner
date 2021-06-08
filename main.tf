@@ -255,9 +255,9 @@ resource "aws_ecs_task_definition" "scheduled_task_def" {
       repo_url = var.repo_url,
       repo_tag = var.repo_tag,
       s3_results_bucket = var.s3_results_bucket,
-      team_map = var.team_map
+      team_map = var.team_map,
       awslogs_group = local.awslogs_group,
-      awslogs_region = data.aws_region.current.name,
+      awslogs_region = data.aws_region.current.name
     }
   )
 }
