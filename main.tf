@@ -254,7 +254,9 @@ resource "aws_ecs_task_definition" "scheduled_task_def" {
       task_name = var.task_name,
       repo_url = var.repo_url,
       repo_tag = var.repo_tag,
+      output_path = var.output_path,
       s3_results_bucket = var.s3_results_bucket,
+      s3_key = var.s3_key,
       team_map = var.team_map,
       awslogs_group = local.awslogs_group,
       awslogs_region = data.aws_region.current.name

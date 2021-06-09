@@ -29,19 +29,31 @@ variable "repo_tag" {
   default     = "latest"
 }
 
-variable "team_map" {
-  type        = string
-  description = "JSON file containing team to account mappings"
-}
-
 variable "ecs_vpc_id" {
   type = string
   description = "VPC ID to be used by ECS"
 }
 
+variable "output_path" {
+  type = string
+  description = "File to direct output to. (default: SecurityHub-Findings.csv)"
+  default = ""
+}
+
 variable "s3_results_bucket" {
   type        = string
   description = "S3 bucket where you would like to have the output file uploaded"
+}
+
+variable "s3_key" {
+  type = string
+  description = "The S3 key (path/filename) to use (defaults to --output, will have timestamp inserted in name)"
+  default = ""
+}
+
+variable "team_map" {
+  type        = string
+  description = "JSON file containing team to account mappings"
 }
 
 variable "schedule_task_expression" {
