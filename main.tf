@@ -204,6 +204,30 @@ data "aws_iam_policy_document" "task_execution_role_policy_doc" {
   }
 }
 
+data "aws_iam_policy_document" "cross_acc_perms" {
+  statement {
+    actions = [
+      "sts:AssumeRole"
+    ]
+
+    resources = [
+      "arn:aws:iam::037370603820:role/security-hub-collector",
+      "arn:aws:iam::156322662943:role/security-hub-collector"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "security-hub-collector" {
+  name = "security_hub_collector"
+  path = "/"
+  policy = data.aws_iam_policy_document.cross_acc_perms.json
+}
+
+resource "aws_iam_role_policy_attachment" "shc-attachment" {
+  role = aws_iam_role.task_execution_role.name
+  policy_arn = aws_iam_policy.security-hub-collector.arn
+}
+
 #
 # CloudWatch
 #
@@ -258,6 +282,7 @@ resource "aws_ecs_task_definition" "scheduled_task_def" {
       s3_results_bucket = var.s3_results_bucket,
       s3_key = var.s3_key,
       team_map = var.team_map,
+      assume_role = var.assume_role,
       awslogs_group = local.awslogs_group,
       awslogs_region = data.aws_region.current.name
     }
