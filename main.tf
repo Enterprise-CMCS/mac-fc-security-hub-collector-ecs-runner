@@ -1,5 +1,6 @@
 locals {
-  awslogs_group =   split(":", var.logs_cloudwatch_group_arn)[6]
+  awslogs_group    = split(":", var.logs_cloudwatch_group_arn)[6]
+  decoded_team_map = jsondecode(base64decode(var.team_map))
 }
 
 data "aws_caller_identity" "current" {}
@@ -204,28 +205,22 @@ data "aws_iam_policy_document" "task_execution_role_policy_doc" {
   }
 }
 
-data "aws_iam_policy_document" "cross_acc_perms" {
-  statement {
-    actions = [
-      "sts:AssumeRole"
-    ]
-
-    resources = [
-      "arn:aws:iam::037370603820:role/security-hub-collector",
-      "arn:aws:iam::156322662943:role/security-hub-collector"
-    ]
-  }
-}
-
-resource "aws_iam_policy" "security-hub-collector" {
-  name = "security_hub_collector"
+resource "aws_iam_policy" "assume-role-policy" {
+  name = var.assume_role
   path = "/"
-  policy = data.aws_iam_policy_document.cross_acc_perms.json
+  policy = jsonencode({
+    "Version": "2012-10-17",
+    "Statement": {
+      "Effect": "Allow",
+      "Action": "sts:AssumeRole",
+      "Resource": [for account in local.decoded_team_map.teams[0].accounts : "arn:aws:iam::${account}:role/${var.assume_role}"]
+    }
+  })
 }
 
 resource "aws_iam_role_policy_attachment" "shc-attachment" {
   role = aws_iam_role.task_execution_role.name
-  policy_arn = aws_iam_policy.security-hub-collector.arn
+  policy_arn = aws_iam_policy.assume-role-policy.arn
 }
 
 #
@@ -264,7 +259,7 @@ resource "aws_cloudwatch_event_target" "ecs_scheduled_task" {
 resource "aws_ecs_task_definition" "scheduled_task_def" {
   family        = "${var.app_name}-${var.environment}-${var.task_name}"
   network_mode  = "awsvpc"
-  task_role_arn = aws_iam_role.task_role.arn
+  task_role_arn = aws_iam_role.task_execution_role.arn
 
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
