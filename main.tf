@@ -1,5 +1,6 @@
 locals {
-  awslogs_group =   split(":", var.logs_cloudwatch_group_arn)[6]
+  awslogs_group    = split(":", var.logs_cloudwatch_group_arn)[6]
+  decoded_team_map = jsondecode(base64decode(var.team_map))
 }
 
 data "aws_caller_identity" "current" {}
@@ -204,6 +205,24 @@ data "aws_iam_policy_document" "task_execution_role_policy_doc" {
   }
 }
 
+resource "aws_iam_policy" "assume-role-policy" {
+  name = var.assume_role
+  path = "/"
+  policy = data.aws_iam_policy_document.assume-role-policy-doc.json
+}
+
+data "aws_iam_policy_document" "assume-role-policy-doc" {
+  statement {
+    actions   = ["sts:AssumeRole"]
+    resources = [for account in local.decoded_team_map.teams[0].accounts : "arn:aws:iam::${account}:role/${var.assume_role}"]
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "shc-attachment" {
+  role = aws_iam_role.task_execution_role.name
+  policy_arn = aws_iam_policy.assume-role-policy.arn
+}
+
 #
 # CloudWatch
 #
@@ -240,7 +259,7 @@ resource "aws_cloudwatch_event_target" "ecs_scheduled_task" {
 resource "aws_ecs_task_definition" "scheduled_task_def" {
   family        = "${var.app_name}-${var.environment}-${var.task_name}"
   network_mode  = "awsvpc"
-  task_role_arn = aws_iam_role.task_role.arn
+  task_role_arn = aws_iam_role.task_execution_role.arn
 
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
@@ -258,6 +277,7 @@ resource "aws_ecs_task_definition" "scheduled_task_def" {
       s3_results_bucket = var.s3_results_bucket,
       s3_key = var.s3_key,
       team_map = var.team_map,
+      assume_role = var.assume_role,
       awslogs_group = local.awslogs_group,
       awslogs_region = data.aws_region.current.name
     }
