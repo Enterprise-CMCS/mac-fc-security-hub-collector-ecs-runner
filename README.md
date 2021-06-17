@@ -28,7 +28,7 @@ module "security_hub_collector_runner" {
   output_path       = ""
   s3_results_bucket = aws_s3_bucket.security_hub_collector.bucket
   s3_key            = ""
-  team_map          = filebase64("${path.module}/teammap.json")
+  team_map          = filebase64("${path.module}/teammap.json") // read more in Required Parameters
   assume_role       = "security-hub-collector"
 }
 ```
@@ -36,7 +36,7 @@ module "security_hub_collector_runner" {
 | Name | Description |
 |------|---------|
 | s3_results_bucket | Bucket value to store security hub collector results. If value is a valid bucket path, CSV files will be streamed to it. |
-| team_map | JSON file containing team to account mappings. |
+| team_map | JSON file containing team to account mappings. The JSON is base64 encoded so that it can be passed as a string to the task definition and is decoded in the container for use with the security hub collector tool. Base64 encoding is required to avoid error when attempting to run this module. |
 
 ## Optional Parameters
 
