@@ -208,14 +208,14 @@ data "aws_iam_policy_document" "task_execution_role_policy_doc" {
 resource "aws_iam_policy" "assume-role-policy" {
   name = var.assume_role
   path = "/"
-  policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": {
-      "Effect": "Allow",
-      "Action": "sts:AssumeRole",
-      "Resource": [for account in local.decoded_team_map.teams[0].accounts : "arn:aws:iam::${account}:role/${var.assume_role}"]
-    }
-  })
+  policy = data.aws_iam_policy_document.assume-role-policy-doc.json
+}
+
+data "aws_iam_policy_document" "assume-role-policy-doc" {
+  statement {
+    actions   = ["sts:AssumeRole"]
+    resources = [for account in local.decoded_team_map.teams[0].accounts : "arn:aws:iam::${account}:role/${var.assume_role}"]
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "shc-attachment" {
