@@ -214,7 +214,7 @@ resource "aws_iam_policy" "assume-role-policy" {
 data "aws_iam_policy_document" "assume-role-policy-doc" {
   statement {
     actions   = ["sts:AssumeRole"]
-    resources = [for account in local.decoded_team_map.teams[0].accounts : "arn:aws:iam::${account}:role/${var.assume_role}"]
+    resources = flatten([for group in local.decoded_team_map.teams : [for account in group.accounts : "arn:aws:iam::${account}:role/${var.assume_role}"]])
   }
 }
 
