@@ -123,9 +123,11 @@ data "aws_iam_policy_document" "cloudwatch_target_role_policy_doc" {
 }
 
 resource "aws_iam_role" "cloudwatch_target_role" {
-  name               = "cw-target-role-${var.app_name}-${var.environment}-${var.task_name}"
-  description        = "Role allowing CloudWatch Events to run the task"
-  assume_role_policy = data.aws_iam_policy_document.events_assume_role_policy.json
+  name                 = "cw-target-role-${var.app_name}-${var.environment}-${var.task_name}"
+  description          = "Role allowing CloudWatch Events to run the task"
+  assume_role_policy   = data.aws_iam_policy_document.events_assume_role_policy.json
+  path                 = var.role_path
+  permissions_boundary = var.permissions_boundary
 }
 
 resource "aws_iam_role_policy" "cloudwatch_target_role_policy" {
@@ -140,15 +142,19 @@ resource "aws_iam_role_policy_attachment" "read_only_everything" {
 }
 
 resource "aws_iam_role" "task_role" {
-  name               = "ecs-task-role-${var.app_name}-${var.environment}-${var.task_name}"
-  description        = "Role allowing container definition to execute"
-  assume_role_policy = data.aws_iam_policy_document.ecs_assume_role_policy.json
+  name                 = "ecs-task-role-${var.app_name}-${var.environment}-${var.task_name}"
+  description          = "Role allowing container definition to execute"
+  assume_role_policy   = data.aws_iam_policy_document.ecs_assume_role_policy.json
+  path                 = var.role_path
+  permissions_boundary = var.permissions_boundary
 }
 
 resource "aws_iam_role" "task_execution_role" {
-  name               = "ecs-task-exec-role-${var.app_name}-${var.environment}-${var.task_name}"
-  description        = "Role allowing ECS tasks to execute"
-  assume_role_policy = data.aws_iam_policy_document.ecs_assume_role_policy.json
+  name                 = "ecs-task-exec-role-${var.app_name}-${var.environment}-${var.task_name}"
+  description          = "Role allowing ECS tasks to execute"
+  assume_role_policy   = data.aws_iam_policy_document.ecs_assume_role_policy.json
+  path                 = var.role_path
+  permissions_boundary = var.permissions_boundary
 }
 
 resource "aws_iam_role_policy" "task_execution_role_policy" {
@@ -207,7 +213,7 @@ data "aws_iam_policy_document" "task_execution_role_policy_doc" {
 
 resource "aws_iam_policy" "assume-role-policy" {
   name = var.assume_role
-  path = "/"
+  path = var.role_path
   policy = data.aws_iam_policy_document.assume-role-policy-doc.json
 }
 
@@ -249,7 +255,7 @@ resource "aws_cloudwatch_event_target" "ecs_scheduled_task" {
     network_configuration {
       subnets          = var.ecs_subnet_ids
       security_groups  = [aws_security_group.ecs_sg.id]
-      assign_public_ip = false
+      assign_public_ip = var.assign_public_ip
     }
   }
 }

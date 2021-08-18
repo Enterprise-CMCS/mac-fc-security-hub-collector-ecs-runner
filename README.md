@@ -32,7 +32,9 @@ module "security_hub_collector_runner" {
   assume_role       = "security-hub-collector"
 }
 ```
+
 ## Required Parameters
+
 | Name | Description |
 |------|---------|
 | s3_results_bucket | Bucket value to store security hub collector results. If value is a valid bucket path, CSV files will be streamed to it. |
@@ -47,7 +49,6 @@ module "security_hub_collector_runner" {
 | output_path | "SecurityHub-Findings.csv" | File to direct output to.|
 | s3_results_bucket | "" | Bucket value to store security hub collector results. If value is a valid bucket path, CSV files will be streamed to it. |
 | s3_key | "--output" | The S3 key (path/filename) to use (defaults to --output, will have timestamp inserted in name) |
-
 
 ## Outputs
 
