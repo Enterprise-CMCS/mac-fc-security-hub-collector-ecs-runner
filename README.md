@@ -14,12 +14,15 @@ module "security_hub_collector_runner" {
   app_name    = "security-hub"
   environment = "dev"
 
-  task_name      = "scheduled-collector"
-  repo_arn       = module.cms_ars_repo.arn
-  repo_url       = module.cms_ars_repo.repo_url
-  repo_tag       = "latest"
-  ecs_vpc_id     = data.aws_vpc.mac_fc_example_east_sandbox.id
-  ecs_subnet_ids = [data.aws_subnet.private_a.id]
+  task_name            = "scheduled-collector"
+  repo_arn             = module.cms_ars_repo.arn
+  repo_url             = module.cms_ars_repo.repo_url
+  repo_tag             = "latest"
+  ecs_vpc_id           = data.aws_vpc.mac_fc_example_east_sandbox.id
+  ecs_subnet_ids       = [data.aws_subnet.private_a.id]
+  assign_public_ip     = true // optional, defaults to false
+  role_path            = // optional, defaults to "/"
+  permissions_boundary = // optional, defaults to ""
 
   schedule_task_expression  = "cron(30 9 * * ? *)"
   logs_cloudwatch_group_arn = aws_cloudwatch_log_group.main.arn
@@ -32,7 +35,9 @@ module "security_hub_collector_runner" {
   assume_role       = "security-hub-collector"
 }
 ```
+
 ## Required Parameters
+
 | Name | Description |
 |------|---------|
 | s3_results_bucket | Bucket value to store security hub collector results. If value is a valid bucket path, CSV files will be streamed to it. |
@@ -47,7 +52,6 @@ module "security_hub_collector_runner" {
 | output_path | "SecurityHub-Findings.csv" | File to direct output to.|
 | s3_results_bucket | "" | Bucket value to store security hub collector results. If value is a valid bucket path, CSV files will be streamed to it. |
 | s3_key | "--output" | The S3 key (path/filename) to use (defaults to --output, will have timestamp inserted in name) |
-
 
 ## Outputs
 
