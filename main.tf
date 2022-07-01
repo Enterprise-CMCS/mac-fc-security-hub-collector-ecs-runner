@@ -212,8 +212,8 @@ data "aws_iam_policy_document" "task_execution_role_policy_doc" {
 }
 
 resource "aws_iam_policy" "assume-role-policy" {
-  name = var.assume_role
-  path = var.role_path
+  name   = var.assume_role
+  path   = var.role_path
   policy = data.aws_iam_policy_document.assume-role-policy-doc.json
 }
 
@@ -225,7 +225,7 @@ data "aws_iam_policy_document" "assume-role-policy-doc" {
 }
 
 resource "aws_iam_role_policy_attachment" "shc-attachment" {
-  role = aws_iam_role.task_execution_role.name
+  role       = aws_iam_role.task_execution_role.name
   policy_arn = aws_iam_policy.assume-role-policy.arn
 }
 
@@ -274,18 +274,20 @@ resource "aws_ecs_task_definition" "scheduled_task_def" {
 
   container_definitions = templatefile("${path.module}/container-definitions.tpl",
     {
-      app_name = var.app_name,
-      environment = var.environment,
-      task_name = var.task_name,
-      repo_url = var.repo_url,
-      repo_tag = var.repo_tag,
-      output_path = var.output_path,
+      app_name          = var.app_name,
+      environment       = var.environment,
+      task_name         = var.task_name,
+      repo_url          = var.repo_url,
+      repo_tag          = var.repo_tag,
+      output_path       = var.output_path,
       s3_results_bucket = var.s3_results_bucket,
-      s3_key = var.s3_key,
-      team_map = var.team_map,
-      assume_role = var.assume_role,
-      awslogs_group = local.awslogs_group,
-      awslogs_region = data.aws_region.current.name
+      s3_key            = var.s3_key,
+      team_map          = var.team_map,
+      assume_role       = var.assume_role,
+      awslogs_group     = local.awslogs_group,
+      awslogs_region    = data.aws_region.current.name,
+      cpu               = var.ecs_cpu,
+      memory            = var.ecs_memory
     }
   )
 }

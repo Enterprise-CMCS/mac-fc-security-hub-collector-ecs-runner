@@ -2,8 +2,8 @@
   {
     "name": "${app_name}-${environment}-${task_name}",
     "image": "${repo_url}:${repo_tag}",
-    "cpu": 128,
-    "memory": 1024,
+    "cpu": ${cpu},
+    "memory": ${memory},
     "essential": true,
     "portMappings": [],
     "environment": [
