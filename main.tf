@@ -268,8 +268,8 @@ resource "aws_ecs_task_definition" "scheduled_task_def" {
   task_role_arn = aws_iam_role.task_execution_role.arn
 
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "1024"
+  cpu                      = var.ecs_cpu
+  memory                   = var.ecs_memory
   execution_role_arn       = join("", aws_iam_role.task_execution_role.*.arn)
 
   container_definitions = templatefile("${path.module}/container-definitions.tpl",
