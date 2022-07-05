@@ -54,8 +54,8 @@ module "security_hub_collector_runner" {
 | output_path | "SecurityHub-Findings.csv" | File to direct output to.|
 | s3_results_bucket | "" | Bucket value to store security hub collector results. If value is a valid bucket path, CSV files will be streamed to it. |
 | s3_key | "--output" | The S3 key (path/filename) to use (defaults to --output, will have timestamp inserted in name) |
-| ecs_cpu | 256 | The hard limit of CPU units (in CPU units) allocated to the ECS task
-| ecs_memory | 1024 | The hard limit of memory (in MiB) allocated to the ECS task
+| ecs_cpu | 256 | The hard limit of CPU units (in CPU units) allocated to the ECS task |
+| ecs_memory | 1024 | The hard limit of memory (in MiB) allocated to the ECS task |
 
 
 ## Outputs
