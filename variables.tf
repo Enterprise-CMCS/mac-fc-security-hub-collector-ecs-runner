@@ -14,7 +14,7 @@ variable "task_name" {
 }
 
 variable "repo_arn" {
-  type = string
+  type        = string
   description = "ARN of the ECR repo hosting the scanner container image"
 }
 
@@ -30,14 +30,14 @@ variable "repo_tag" {
 }
 
 variable "ecs_vpc_id" {
-  type = string
+  type        = string
   description = "VPC ID to be used by ECS"
 }
 
 variable "output_path" {
-  type = string
+  type        = string
   description = "File to direct output to. (default: SecurityHub-Findings.csv)"
-  default = ""
+  default     = ""
 }
 
 variable "s3_results_bucket" {
@@ -46,9 +46,9 @@ variable "s3_results_bucket" {
 }
 
 variable "s3_key" {
-  type = string
+  type        = string
   description = "The S3 key (path/filename) to use (defaults to --output, will have timestamp inserted in name)"
-  default = ""
+  default     = ""
 }
 
 variable "team_map" {
@@ -62,9 +62,9 @@ variable "assume_role" {
 }
 
 variable "schedule_task_expression" {
-  type = string
+  type        = string
   description = "Cron based schedule task to run on a cadence"
-  default = "cron(30 9 * * ? *)" // run 9:30 everyday"
+  default     = "cron(30 9 * * ? *)" // run 9:30 everyday"
 }
 
 variable "logs_cloudwatch_group_arn" {
@@ -98,4 +98,16 @@ variable "permissions_boundary" {
   description = "ARN of the policy that is used to set the permissions boundary for the role"
   type        = string
   default     = ""
+}
+
+variable "ecs_cpu" {
+  description = "The hard limit of CPU units (in CPU units) allocated to the ECS task"
+  type        = number
+  default     = 256
+}
+
+variable "ecs_memory" {
+  description = "The hard limit of memory (in MiB) allocated to the ECS task"
+  type        = number
+  default     = 1024
 }
