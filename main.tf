@@ -237,6 +237,7 @@ resource "aws_cloudwatch_event_rule" "run_command" {
   name                = "${var.task_name}-${var.environment}"
   description         = "Scheduled task for ${var.task_name} in ${var.environment}"
   schedule_expression = var.schedule_task_expression
+  is_enabled          = var.scheduled_task_enabled
 }
 
 resource "aws_cloudwatch_event_target" "ecs_scheduled_task" {
