@@ -9,7 +9,7 @@ This repo contains a Terraform module for a scheduled ECS task that periodically
 
 ```hcl
 module "security_hub_collector_runner" {
-  source      = "github.com/CMSgov/security-hub-collector-ecs-runner?ref=8b712aa2da6b4d900e0d0d60aa732fae048a1b69"
+  source      = "github.com/CMSgov/security-hub-collector-ecs-runner"
   app_name    = "security-hub"
   environment = "dev"
 
@@ -20,8 +20,8 @@ module "security_hub_collector_runner" {
   ecs_vpc_id           = data.aws_vpc.mac_fc_example_east_sandbox.id
   ecs_subnet_ids       = [data.aws_subnet.private_a.id]
   ecs_cpu              = // optional, defaults to 256
-  ecs_memory           = // optionals, defaults to 1024
-  assign_public_ip     = true // optional, defaults to false
+  ecs_memory           = // optional, defaults to 1024
+  assign_public_ip     = // optional, defaults to false
   role_path            = // optional, defaults to "/"
   permissions_boundary = // optional, defaults to ""
 
@@ -56,6 +56,7 @@ module "security_hub_collector_runner" {
 | s3_key | "--output" | The S3 key (path/filename) to use (defaults to --output, will have timestamp inserted in name) |
 | ecs_cpu | 256 | The hard limit of CPU units (in CPU units) allocated to the ECS task |
 | ecs_memory | 1024 | The hard limit of memory (in MiB) allocated to the ECS task |
+| scheduled_task_enabled | true | Whether the scheduled ECS task is enabled or not |
 
 
 ## Outputs
