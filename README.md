@@ -1,10 +1,9 @@
 # security-hub-collector-ecs-runner
 
-This repo contains a Terraform module which will deploy a scheduled ECS
-task which periodically collects security hub findings from the specified AWS accounts. To read more about the security-hub-collector CLI tool, go to [this repository](https://github.com/CMSgov/security-hub-collector). The module supports following features:]
+This repo contains a Terraform module for a scheduled ECS task that periodically collects Security Hub findings from the specified AWS accounts. To read more about the security-hub-collector CLI tool, go to [this repository](https://github.com/CMSgov/security-hub-collector). The module supports the following features:
 
-* Run an ECS task which collects results from Security Hub and outputs to a CSV file in a specified S3 bucket
-* Cloudwatch rule to run tasks on a cron based cadence
+* Run an ECS task that collects results from Security Hub and outputs them to a CSV file in a specified S3 bucket
+* Cloudwatch rule to run tasks on a cron-based cadence
 
 ## Usage
 
@@ -27,6 +26,7 @@ module "security_hub_collector_runner" {
   permissions_boundary = // optional, defaults to ""
 
   schedule_task_expression  = "cron(30 9 * * ? *)"
+  scheduled_task_enabled    = // optional, defaults to true
   logs_cloudwatch_group_arn = aws_cloudwatch_log_group.main.arn
   ecs_cluster_arn           = "arn:aws:ecs:us-east-1:037370603820:cluster/aws-scanner-inspec"
 
