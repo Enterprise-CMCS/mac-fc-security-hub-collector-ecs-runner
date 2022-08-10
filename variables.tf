@@ -111,6 +111,7 @@ variable "ecs_memory" {
   type        = number
   default     = 1024
 }
+
 variable "scheduled_task_enabled" {
   description = "Whether the scheduled task is enabled or not"
   type        = bool
