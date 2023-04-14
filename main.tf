@@ -220,7 +220,7 @@ resource "aws_iam_policy" "assume-role-policy" {
 data "aws_iam_policy_document" "assume-role-policy-doc" {
   statement {
     actions   = ["sts:AssumeRole"]
-    resources = flatten([for group in local.decoded_team_map.teams : [for account in group.accounts : "arn:aws:iam::${account}:role/${var.assume_role}"]])
+    resources = flatten([for group in local.decoded_team_map.teams : [for account in group.accounts : "arn:aws:iam::${account.id}:role${var.role_path}${var.assume_role}"]])
   }
 }
 
@@ -284,7 +284,8 @@ resource "aws_ecs_task_definition" "scheduled_task_def" {
       s3_results_bucket = var.s3_results_bucket,
       s3_key            = var.s3_key,
       team_map          = var.team_map,
-      assume_role       = var.assume_role,
+      # remove the trailing slash and concatenate the path with the role name to get the full assume_role value
+      assume_role       = "${replace(var.role_path, "/^\\//", "")}${var.assume_role}"
       awslogs_group     = local.awslogs_group,
       awslogs_region    = data.aws_region.current.name,
       cpu               = var.ecs_cpu,
