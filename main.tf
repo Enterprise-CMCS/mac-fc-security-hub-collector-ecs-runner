@@ -284,8 +284,7 @@ resource "aws_ecs_task_definition" "scheduled_task_def" {
       s3_results_bucket = var.s3_results_bucket,
       s3_key            = var.s3_key,
       team_map          = var.team_map,
-      # remove the trailing slash and concatenate the path with the role name to get the full assume_role value
-      assume_role       = "${replace(var.role_path, "/^\\//", "")}${var.assume_role}"
+      assume_role       = "${var.role_path}${var.assume_role}"
       awslogs_group     = local.awslogs_group,
       awslogs_region    = data.aws_region.current.name,
       cpu               = var.ecs_cpu,
