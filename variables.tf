@@ -89,7 +89,7 @@ variable "assign_public_ip" {
 }
 
 variable "role_path" {
-  description = "The path in which to create the assume roles and policies. Refer to https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html for more"
+  description = "The path in which to create the assume roles and policies. Refer to https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html for more. A valid path must begin and end with a forward slash (/)."
   type        = string
   default     = "/"
 }
