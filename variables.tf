@@ -107,8 +107,8 @@ variable "ecs_memory" {
   default     = 1024
 }
 
-variable "scheduled_task_enabled" {
-  description = "Whether the scheduled task is enabled or not"
-  type        = bool
-  default     = true
+variable "scheduled_task_state" {
+  description = "Set scheduled task is state. Default is ENABLED, setting this to DISABLED will stop the task"
+  type        = string
+  default     = "ENABLED"
 }
