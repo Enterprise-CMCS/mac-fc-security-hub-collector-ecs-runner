@@ -34,7 +34,6 @@ module "security_hub_collector_runner" {
   s3_results_bucket = aws_s3_bucket.security_hub_collector.bucket
   s3_key            = ""
   team_map          = filebase64("${path.module}/teammap.json") // read more in Required Parameters
-  assume_role       = "security-hub-collector"
 }
 ```
 
@@ -49,7 +48,6 @@ module "security_hub_collector_runner" {
 
 | Name | Default Value | Description |
 |------|---------|---------|
-| assume_role | "" | Role name to assume when collecting across all accounts |
 | logs_cloudwatch_group_arn | "" | CloudWatch log group arn, overrides values of logs_cloudwatch_retention & logs_cloudwatch_group |
 | output_path | "SecurityHub-Findings.csv" | File to direct output to.|
 | s3_results_bucket | "" | Bucket value to store security hub collector results. If value is a valid bucket path, CSV files will be streamed to it. |

@@ -56,11 +56,6 @@ variable "team_map" {
   description = "JSON file containing team to account mappings"
 }
 
-variable "assume_role" {
-  type        = string
-  description = "The common role name to assume in the different accounts for cross account permissions"
-}
-
 variable "schedule_task_expression" {
   type        = string
   description = "Cron based schedule task to run on a cadence"
