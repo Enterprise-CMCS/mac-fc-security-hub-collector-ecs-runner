@@ -56,11 +56,6 @@ variable "team_map" {
   description = "JSON file containing team to account mappings"
 }
 
-variable "assume_role" {
-  type        = string
-  description = "The common role name to assume in the different accounts for cross account permissions"
-}
-
 variable "schedule_task_expression" {
   type        = string
   description = "Cron based schedule task to run on a cadence"
@@ -112,8 +107,8 @@ variable "ecs_memory" {
   default     = 1024
 }
 
-variable "scheduled_task_enabled" {
-  description = "Whether the scheduled task is enabled or not"
-  type        = bool
-  default     = true
+variable "scheduled_task_state" {
+  description = "Set scheduled task is state. Default is ENABLED, setting this to DISABLED will stop the task"
+  type        = string
+  default     = "ENABLED"
 }

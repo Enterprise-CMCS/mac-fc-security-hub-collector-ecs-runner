@@ -212,7 +212,7 @@ data "aws_iam_policy_document" "task_execution_role_policy_doc" {
 }
 
 resource "aws_iam_policy" "assume-role-policy" {
-  name   = var.assume_role
+  name   = "security-hub-collector"
   path   = var.role_path
   policy = data.aws_iam_policy_document.assume-role-policy-doc.json
 }
@@ -220,7 +220,7 @@ resource "aws_iam_policy" "assume-role-policy" {
 data "aws_iam_policy_document" "assume-role-policy-doc" {
   statement {
     actions   = ["sts:AssumeRole"]
-    resources = flatten([for group in local.decoded_team_map.teams : [for account in group.accounts : "arn:aws:iam::${account.id}:role${var.role_path}${var.assume_role}"]])
+    resources = flatten([for group in local.decoded_team_map.teams : [for account in group.accounts : "${account.roleArn}"]])
   }
 }
 
@@ -237,7 +237,7 @@ resource "aws_cloudwatch_event_rule" "run_command" {
   name                = "${var.task_name}-${var.environment}"
   description         = "Scheduled task for ${var.task_name} in ${var.environment}"
   schedule_expression = var.schedule_task_expression
-  is_enabled          = var.scheduled_task_enabled
+  state               = var.scheduled_task_state
 }
 
 resource "aws_cloudwatch_event_target" "ecs_scheduled_task" {
@@ -284,7 +284,6 @@ resource "aws_ecs_task_definition" "scheduled_task_def" {
       s3_results_bucket = var.s3_results_bucket,
       s3_key            = var.s3_key,
       team_map          = var.team_map,
-      assume_role       = "${var.role_path}${var.assume_role}"
       awslogs_group     = local.awslogs_group,
       awslogs_region    = data.aws_region.current.name,
       cpu               = var.ecs_cpu,

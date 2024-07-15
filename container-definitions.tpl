@@ -10,8 +10,7 @@
       {"name": "OUTPUT", "value": "${output_path}"},
       {"name": "S3_BUCKET_PATH", "value": "${s3_results_bucket}"},
       {"name": "S3_KEY", "value": "${s3_key}"},
-      {"name": "TEAM_MAP", "value": "${team_map}"},
-      {"name": "ASSUME_ROLE", "value": "${assume_role}"}
+      {"name": "TEAM_MAP", "value": "${team_map}"}
     ],
     "logConfiguration": {
       "logDriver": "awslogs",
