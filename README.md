@@ -26,7 +26,7 @@ module "security_hub_collector_runner" {
   permissions_boundary = // optional, defaults to ""
 
   schedule_task_expression  = "cron(30 9 * * ? *)"
-  scheduled_task_enabled    = // optional, defaults to ENABLED
+  scheduled_task_state      = // optional, defaults to ENABLED
   logs_cloudwatch_group_arn = aws_cloudwatch_log_group.main.arn
   ecs_cluster_arn           = "arn:aws:ecs:us-east-1:037370603820:cluster/aws-scanner-inspec"
 
@@ -54,7 +54,7 @@ module "security_hub_collector_runner" {
 | s3_key | "--output" | The S3 key (path/filename) to use (defaults to --output, will have timestamp inserted in name) |
 | ecs_cpu | 256 | The hard limit of CPU units (in CPU units) allocated to the ECS task |
 | ecs_memory | 1024 | The hard limit of memory (in MiB) allocated to the ECS task |
-| scheduled_task_enabled | ENABLED | Whether the scheduled ECS task is enabled or not |
+| scheduled_task_state | ENABLED | Whether the scheduled ECS task is enabled or not |
 
 
 ## Outputs
