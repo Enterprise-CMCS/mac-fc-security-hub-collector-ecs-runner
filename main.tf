@@ -1,6 +1,6 @@
 locals {
   awslogs_group    = split(":", var.logs_cloudwatch_group_arn)[6]
-  decoded_team_map = jsondecode(base64decode(var.team_map))
+  decoded_team_map = var.team_config.base64_team_map != null ? jsondecode(base64decode(var.team_config.base64_team_map)) : null
 }
 
 data "aws_caller_identity" "current" {}
@@ -136,11 +136,7 @@ resource "aws_iam_role_policy" "cloudwatch_target_role_policy" {
   policy = data.aws_iam_policy_document.cloudwatch_target_role_policy_doc.json
 }
 
-resource "aws_iam_role_policy_attachment" "read_only_everything" {
-  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
-  role       = aws_iam_role.task_role.name
-}
-
+# Task role
 resource "aws_iam_role" "task_role" {
   name                 = "ecs-task-role-${var.app_name}-${var.environment}-${var.task_name}"
   description          = "Role allowing container definition to execute"
@@ -149,6 +145,88 @@ resource "aws_iam_role" "task_role" {
   permissions_boundary = var.permissions_boundary
 }
 
+resource "aws_iam_role_policy_attachment" "read_only_everything" {
+  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+  role       = aws_iam_role.task_role.name
+}
+
+data "aws_iam_policy_document" "assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    resources = local.decoded_team_map != null ? (
+      flatten([for group in local.decoded_team_map.teams : [for account in group.accounts : account.roleArn]])
+    ) : [(var.team_config.athena != null && var.team_config.athena.collector_role_path != null) ? "arn:aws:iam::*:role/${var.team_config.athena.collector_role_path}" : ""]
+  }
+}
+
+resource "aws_iam_policy" "assume_role" {
+  name   = "assume-role-${var.app_name}-${var.environment}-${var.task_name}"
+  path   = var.role_path
+  policy = data.aws_iam_policy_document.assume_role.json
+}
+
+resource "aws_iam_role_policy_attachment" "assume_role" {
+  role       = aws_iam_role.task_role.name
+  policy_arn = aws_iam_policy.assume_role.arn
+}
+
+resource "aws_iam_policy" "athena" {
+  count       = var.team_config.athena != null ? 1 : 0
+  name        = "athena-query-policy"
+  path        = var.role_path
+  description = "Policy for Athena query execution"
+  policy      = data.aws_iam_policy_document.athena[0].json
+}
+
+data "aws_iam_policy_document" "athena" {
+  count = var.team_config.athena != null ? 1 : 0
+
+  statement {
+    sid       = ""
+    effect    = "Allow"
+    resources = ["*"]
+    actions = [
+      "athena:StartQueryExecution",
+      "athena:GetQueryExecution",
+      "athena:GetQueryResults",
+    ]
+  }
+
+  statement {
+    sid    = "AthenaResultsS3Access"
+    effect = "Allow"
+    resources = [
+      "arn:aws:s3:::${trimprefix(var.team_config.athena.query_output_location, "s3://")}",
+      "arn:aws:s3:::${trimprefix(var.team_config.athena.query_output_location, "s3://")}/*"
+    ]
+    actions = [
+      "s3:GetBucketLocation",
+      "s3:PutObject",
+      "s3:GetObject"
+    ]
+  }
+
+  statement {
+    sid    = "CollectorResultsS3Access"
+    effect = "Allow"
+    resources = [
+      "arn:aws:s3:::${var.s3_results_bucket}",
+      "arn:aws:s3:::${var.s3_results_bucket}/*"
+    ]
+    actions = [
+      "s3:GetBucketLocation",
+      "s3:PutObject"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "athena" {
+  count      = var.team_config.athena != null ? 1 : 0
+  role       = aws_iam_role.task_role.name
+  policy_arn = aws_iam_policy.athena[0].arn
+}
+
+# Task execution role
 resource "aws_iam_role" "task_execution_role" {
   name                 = "ecs-task-exec-role-${var.app_name}-${var.environment}-${var.task_name}"
   description          = "Role allowing ECS tasks to execute"
@@ -211,24 +289,6 @@ data "aws_iam_policy_document" "task_execution_role_policy_doc" {
   }
 }
 
-resource "aws_iam_policy" "assume-role-policy" {
-  name   = "security-hub-collector"
-  path   = var.role_path
-  policy = data.aws_iam_policy_document.assume-role-policy-doc.json
-}
-
-data "aws_iam_policy_document" "assume-role-policy-doc" {
-  statement {
-    actions   = ["sts:AssumeRole"]
-    resources = flatten([for group in local.decoded_team_map.teams : [for account in group.accounts : "${account.roleArn}"]])
-  }
-}
-
-resource "aws_iam_role_policy_attachment" "shc-attachment" {
-  role       = aws_iam_role.task_execution_role.name
-  policy_arn = aws_iam_policy.assume-role-policy.arn
-}
-
 #
 # CloudWatch
 #
@@ -266,28 +326,30 @@ resource "aws_cloudwatch_event_target" "ecs_scheduled_task" {
 resource "aws_ecs_task_definition" "scheduled_task_def" {
   family        = "${var.app_name}-${var.environment}-${var.task_name}"
   network_mode  = "awsvpc"
-  task_role_arn = aws_iam_role.task_execution_role.arn
+  task_role_arn = aws_iam_role.task_role.arn
 
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.ecs_cpu
   memory                   = var.ecs_memory
-  execution_role_arn       = join("", aws_iam_role.task_execution_role.*.arn)
+  execution_role_arn       = aws_iam_role.task_execution_role.arn
 
   container_definitions = templatefile("${path.module}/container-definitions.tpl",
     {
-      app_name          = var.app_name,
-      environment       = var.environment,
-      task_name         = var.task_name,
-      repo_url          = var.repo_url,
-      repo_tag          = var.repo_tag,
-      output_path       = var.output_path,
-      s3_results_bucket = var.s3_results_bucket,
-      s3_key            = var.s3_key,
-      team_map          = var.team_map,
-      awslogs_group     = local.awslogs_group,
-      awslogs_region    = data.aws_region.current.name,
-      cpu               = var.ecs_cpu,
-      memory            = var.ecs_memory
+      app_name              = var.app_name,
+      environment           = var.environment,
+      task_name             = var.task_name,
+      repo_url              = var.repo_url,
+      repo_tag              = var.repo_tag,
+      s3_results_bucket     = var.s3_results_bucket,
+      s3_key                = var.s3_key,
+      base64_team_map       = var.team_config.base64_team_map != null ? var.team_config.base64_team_map : "",
+      athena_teams_table    = var.team_config.athena != null ? var.team_config.athena.teams_table : "",
+      query_output_location = var.team_config.athena != null ? var.team_config.athena.query_output_location : "",
+      collector_role_path   = var.team_config.athena != null ? var.team_config.athena.collector_role_path : "",
+      awslogs_group         = local.awslogs_group,
+      awslogs_region        = data.aws_region.current.name,
+      cpu                   = var.ecs_cpu,
+      memory                = var.ecs_memory
     }
   )
 }

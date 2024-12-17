@@ -4,6 +4,7 @@ This repo contains a Terraform module for a scheduled ECS task that periodically
 
 * Run an ECS task that collects results from Security Hub and outputs them to a CSV file in a specified S3 bucket
 * Cloudwatch rule to run tasks on a cron-based cadence
+* Supports two methods of configuration: direct team mapping or Athena-based team lookup
 
 ## Usage
 
@@ -19,50 +20,79 @@ module "security_hub_collector_runner" {
   repo_tag             = "latest"
   ecs_vpc_id           = data.aws_vpc.mac_fc_example_east_sandbox.id
   ecs_subnet_ids       = [data.aws_subnet.private_a.id]
-  ecs_cpu              = // optional, defaults to 256
-  ecs_memory           = // optional, defaults to 1024
-  assign_public_ip     = // optional, defaults to false
-  role_path            = // optional, defaults to "/"
-  permissions_boundary = // optional, defaults to ""
 
   schedule_task_expression  = "cron(30 9 * * ? *)"
-  scheduled_task_state      = // optional, defaults to ENABLED
   logs_cloudwatch_group_arn = aws_cloudwatch_log_group.main.arn
   ecs_cluster_arn           = "arn:aws:ecs:us-east-1:037370603820:cluster/aws-scanner-inspec"
 
   output_path       = ""
   s3_results_bucket = aws_s3_bucket.security_hub_collector.bucket
   s3_key            = ""
-  team_map          = filebase64("${path.module}/teammap.json") // read more in Required Parameters
+
+  # Either team_map OR athena_config must be provided, but not both
+  # Using team map:
+  team_map = file("${path.module}/teammap.json")
+
+  # Alternative configuration using Athena:
+  # athena_config = {
+  #   teams_table           = "my_teams_table"
+  #   query_output_location = "s3://my-bucket/athena-results/"
+  #   collector_role_path    = "my/role/path"
+  # }
 }
 ```
 
 ## Required Parameters
 
 | Name | Description |
-|------|---------|
-| s3_results_bucket | Bucket value to store security hub collector results. If value is a valid bucket path, CSV files will be streamed to it. |
-| team_map | JSON file containing team to account mappings. The JSON is base64 encoded so that it can be passed as a string to the task definition and is decoded in the container for use with the security hub collector tool. Base64 encoding is required to avoid error when attempting to run this module. |
+|------|------------|
+| app_name | Name of the application |
+| environment | Environment name |
+| task_name | Name of the task to be run |
+| repo_arn | ARN of the ECR repo hosting the scanner container image |
+| repo_url | The url of the ECR repo to pull images and run in ecs |
+| ecs_vpc_id | VPC ID to be used by ECS |
+| s3_results_bucket | Bucket value to store security hub collector results |
+| logs_cloudwatch_group_arn | CloudWatch log group arn for container logs |
+| ecs_cluster_arn | ECS cluster ARN to use for running this profile |
+| ecs_subnet_ids | Subnet IDs for the ECS tasks |
+
+And exactly ONE of:
+- `base64_team_map`: String containing team mapping configuration
+- `athena_config`: Object containing Athena configuration settings
+
+## Configuration Options
+
+### Team Map Configuration
+When using `base64_team_map`, provide a base64 encoded JSON string containing team to account mappings. The JSON is decoded in the container for use with the security hub collector tool.
+
+### Athena Configuration
+When using `athena_config`, provide an object with the following required fields:
+- `teams_table`: Athena table name for teams data
+- `query_output_location`: S3 location for Athena query results
+- `collector_role_path`: Path of the IAM role that allows the Collector to access Security Hub
 
 ## Optional Parameters
 
 | Name | Default Value | Description |
-|------|---------|---------|
-| logs_cloudwatch_group_arn | "" | CloudWatch log group arn, overrides values of logs_cloudwatch_retention & logs_cloudwatch_group |
-| output_path | "SecurityHub-Findings.csv" | File to direct output to.|
-| s3_results_bucket | "" | Bucket value to store security hub collector results. If value is a valid bucket path, CSV files will be streamed to it. |
-| s3_key | "--output" | The S3 key (path/filename) to use (defaults to --output, will have timestamp inserted in name) |
-| ecs_cpu | 256 | The hard limit of CPU units (in CPU units) allocated to the ECS task |
-| ecs_memory | 1024 | The hard limit of memory (in MiB) allocated to the ECS task |
-| scheduled_task_state | ENABLED | Whether the scheduled ECS task is enabled or not |
-
+|------|--------------|-------------|
+| repo_tag | "latest" | The tag to identify and pull the image in ECR repo |
+| output_path | "" | File to direct output to |
+| s3_key | "" | The S3 key (path/filename) to use |
+| assign_public_ip | false | Choose whether to assign a public IP address |
+| role_path | "/" | The path for IAM roles and policies |
+| permissions_boundary | "" | ARN of the permissions boundary policy |
+| ecs_cpu | 256 | CPU units allocated to the ECS task |
+| ecs_memory | 1024 | Memory (MiB) allocated to the ECS task |
+| schedule_task_expression | "cron(30 9 * * ? *)" | Cron schedule for the task |
+| scheduled_task_state | "ENABLED" | State of the scheduled task |
 
 ## Outputs
 
 | Name | Description |
-|------|---------|
-| task_execution_role_arn | ARN for the IAM role that is executing the scanner |
-| ecs_cluster_arn | ARN for the ECS cluster where this profile will execute |
+|------|------------|
+| task_execution_role_arn | ARN for the IAM role executing the scanner |
+| ecs_cluster_arn | ARN for the ECS cluster |
 
 ## Requirements
 
