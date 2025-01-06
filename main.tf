@@ -153,6 +153,8 @@ resource "aws_iam_role_policy_attachment" "read_only_everything" {
 data "aws_iam_policy_document" "assume_role" {
   statement {
     actions = ["sts:AssumeRole"]
+    # If a team map is provided, add a resource entry for each role ARN in the map.
+    # Otherwise, if an Athena configuration is provided, add a single entry for a role ARN constructed from the provided role path
     resources = local.decoded_team_map != null ? (
       flatten([for group in local.decoded_team_map.teams : [for account in group.accounts : account.roleArn]])
     ) : [(var.team_config.athena != null && var.team_config.athena.collector_role_path != null) ? "arn:aws:iam::*:role/${var.team_config.athena.collector_role_path}" : ""]
