@@ -7,10 +7,12 @@
     "essential": true,
     "portMappings": [],
     "environment": [
-      {"name": "OUTPUT", "value": "${output_path}"},
-      {"name": "S3_BUCKET_PATH", "value": "${s3_results_bucket}"},
+      {"name": "S3_BUCKET", "value": "${s3_results_bucket}"},
       {"name": "S3_KEY", "value": "${s3_key}"},
-      {"name": "TEAM_MAP", "value": "${team_map}"}
+      {"name": "BASE64_TEAM_MAP", "value": "${base64_team_map}"},
+      {"name": "ATHENA_TEAMS_TABLE", "value": "${athena_teams_table}"},
+      {"name": "QUERY_OUTPUT_LOCATION", "value": "${query_output_location}"},
+      {"name": "COLLECTOR_ROLE_PATH", "value": "${collector_role_path}"}
     ],
     "logConfiguration": {
       "logDriver": "awslogs",
@@ -24,7 +26,7 @@
     "mountPoints": [],
     "volumesFrom": [],
     "entryPoint": [
-            "./scriptRunner.sh"
+            "/bin/security-hub-collector"
     ]
   }
 ]

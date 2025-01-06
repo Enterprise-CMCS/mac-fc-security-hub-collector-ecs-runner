@@ -34,12 +34,6 @@ variable "ecs_vpc_id" {
   description = "VPC ID to be used by ECS"
 }
 
-variable "output_path" {
-  type        = string
-  description = "File to direct output to. (default: SecurityHub-Findings.csv)"
-  default     = ""
-}
-
 variable "s3_results_bucket" {
   type        = string
   description = "S3 bucket where you would like to have the output file uploaded"
@@ -51,9 +45,35 @@ variable "s3_key" {
   default     = ""
 }
 
-variable "team_map" {
-  type        = string
-  description = "JSON file containing team to account mappings"
+variable "team_config" {
+  description = "Configuration for the source of team mapping for security hub collector. Specify either base64_team_map or athena fields, but not both."
+  type = object({
+    base64_team_map = optional(string)
+    athena = optional(object({
+      teams_table           = string
+      query_output_location = string
+      collector_role_path   = string
+    }))
+  })
+
+  validation {
+    condition     = (var.team_config.base64_team_map != null) != (var.team_config.athena != null)
+    error_message = "Exactly one of team_map or athena must be provided"
+  }
+
+  validation {
+    condition     = var.team_config.base64_team_map == null || can(jsondecode(base64decode(var.team_config.base64_team_map)))
+    error_message = "When provided, team_map must be a valid base64 encoded JSON string"
+  }
+
+  validation {
+    condition = var.team_config.athena == null || (
+      try(var.team_config.athena.teams_table, "") != "" &&
+      try(var.team_config.athena.query_output_location, "") != "" &&
+      try(var.team_config.athena.collector_role_path, "") != ""
+    )
+    error_message = "When athena is provided, all sub-fields (athena.teams_table, athena.query_output_location, athena.collector_role_path) must be non-empty strings"
+  }
 }
 
 variable "schedule_task_expression" {
