@@ -46,19 +46,19 @@ variable "s3_key" {
 }
 
 variable "team_config" {
-  description = "Configuration for the source of team mapping for security hub collector. Specify either base64_team_map or athena fields, but not both."
+  description = "Configuration for the source of team mapping for security hub collector. Specify either base64_team_map or teams_api fields, but not both."
   type = object({
     base64_team_map = optional(string)
-    athena = optional(object({
-      teams_table           = string
-      query_output_location = string
-      collector_role_path   = string
+    teams_api = optional(object({
+      base_url            = string
+      api_key_param       = string
+      collector_role_path = string
     }))
   })
 
   validation {
-    condition     = (var.team_config.base64_team_map != null) != (var.team_config.athena != null)
-    error_message = "Exactly one of team_map or athena must be provided"
+    condition     = (var.team_config.base64_team_map != null) != (var.team_config.teams_api != null)
+    error_message = "Exactly one of base64_team_map or teams_api must be provided"
   }
 
   validation {
@@ -67,12 +67,12 @@ variable "team_config" {
   }
 
   validation {
-    condition = var.team_config.athena == null || (
-      try(var.team_config.athena.teams_table, "") != "" &&
-      try(var.team_config.athena.query_output_location, "") != "" &&
-      try(var.team_config.athena.collector_role_path, "") != ""
+    condition = var.team_config.teams_api == null || (
+      try(var.team_config.teams_api.base_url, "") != "" &&
+      try(var.team_config.teams_api.api_key_param, "") != "" &&
+      try(var.team_config.teams_api.collector_role_path, "") != ""
     )
-    error_message = "When athena is provided, all sub-fields (athena.teams_table, athena.query_output_location, athena.collector_role_path) must be non-empty strings"
+    error_message = "When teams_api is provided, all sub-fields (teams_api.base_url, teams_api.api_key_param, teams_api.collector_role_path) must be non-empty strings"
   }
 }
 
