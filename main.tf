@@ -173,7 +173,7 @@ resource "aws_iam_role_policy_attachment" "assume_role" {
 }
 
 resource "aws_iam_policy" "s3" {
-  name   = "assume-role-${var.app_name}-${var.environment}-${var.task_name}"
+  name   = "s3-${var.app_name}-${var.environment}-${var.task_name}"
   path   = var.role_path
   policy = data.aws_iam_policy_document.s3.json
 }
