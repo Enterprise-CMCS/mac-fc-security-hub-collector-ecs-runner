@@ -154,10 +154,10 @@ data "aws_iam_policy_document" "assume_role" {
   statement {
     actions = ["sts:AssumeRole"]
     # If a team map is provided, add a resource entry for each role ARN in the map.
-    # Otherwise, if an Athena configuration is provided, add a single entry for a role ARN constructed from the provided role path
+    # Otherwise, if a Teams API configuration is provided, add a single entry for a role ARN constructed from the provided role path
     resources = local.decoded_team_map != null ? (
       flatten([for group in local.decoded_team_map.teams : [for account in group.accounts : account.roleArn]])
-    ) : [(var.team_config.athena != null && var.team_config.athena.collector_role_path != null) ? "arn:aws:iam::*:role/${var.team_config.athena.collector_role_path}" : ""]
+    ) : [(var.team_config.teams_api != null && var.team_config.teams_api.collector_role_path != null) ? "arn:aws:iam::*:role/${var.team_config.teams_api.collector_role_path}" : ""]
   }
 }
 
@@ -172,42 +172,13 @@ resource "aws_iam_role_policy_attachment" "assume_role" {
   policy_arn = aws_iam_policy.assume_role.arn
 }
 
-resource "aws_iam_policy" "athena" {
-  count       = var.team_config.athena != null ? 1 : 0
-  name        = "athena-query-policy"
-  path        = var.role_path
-  description = "Policy for Athena query execution"
-  policy      = data.aws_iam_policy_document.athena[0].json
+resource "aws_iam_policy" "s3" {
+  name   = "s3-${var.app_name}-${var.environment}-${var.task_name}"
+  path   = var.role_path
+  policy = data.aws_iam_policy_document.s3.json
 }
 
-data "aws_iam_policy_document" "athena" {
-  count = var.team_config.athena != null ? 1 : 0
-
-  statement {
-    sid       = ""
-    effect    = "Allow"
-    resources = ["*"]
-    actions = [
-      "athena:StartQueryExecution",
-      "athena:GetQueryExecution",
-      "athena:GetQueryResults",
-    ]
-  }
-
-  statement {
-    sid    = "AthenaResultsS3Access"
-    effect = "Allow"
-    resources = [
-      "arn:aws:s3:::${trimprefix(var.team_config.athena.query_output_location, "s3://")}",
-      "arn:aws:s3:::${trimprefix(var.team_config.athena.query_output_location, "s3://")}/*"
-    ]
-    actions = [
-      "s3:GetBucketLocation",
-      "s3:PutObject",
-      "s3:GetObject"
-    ]
-  }
-
+data "aws_iam_policy_document" "s3" {
   statement {
     sid    = "CollectorResultsS3Access"
     effect = "Allow"
@@ -222,10 +193,9 @@ data "aws_iam_policy_document" "athena" {
   }
 }
 
-resource "aws_iam_role_policy_attachment" "athena" {
-  count      = var.team_config.athena != null ? 1 : 0
+resource "aws_iam_role_policy_attachment" "task_s3" {
   role       = aws_iam_role.task_role.name
-  policy_arn = aws_iam_policy.athena[0].arn
+  policy_arn = aws_iam_policy.s3.arn
 }
 
 # Task execution role
@@ -337,21 +307,21 @@ resource "aws_ecs_task_definition" "scheduled_task_def" {
 
   container_definitions = templatefile("${path.module}/container-definitions.tpl",
     {
-      app_name              = var.app_name,
-      environment           = var.environment,
-      task_name             = var.task_name,
-      repo_url              = var.repo_url,
-      repo_tag              = var.repo_tag,
-      s3_results_bucket     = var.s3_results_bucket,
-      s3_key                = var.s3_key,
-      base64_team_map       = var.team_config.base64_team_map != null ? var.team_config.base64_team_map : "",
-      athena_teams_table    = var.team_config.athena != null ? var.team_config.athena.teams_table : "",
-      query_output_location = var.team_config.athena != null ? var.team_config.athena.query_output_location : "",
-      collector_role_path   = var.team_config.athena != null ? var.team_config.athena.collector_role_path : "",
-      awslogs_group         = local.awslogs_group,
-      awslogs_region        = data.aws_region.current.name,
-      cpu                   = var.ecs_cpu,
-      memory                = var.ecs_memory
+      app_name            = var.app_name,
+      environment         = var.environment,
+      task_name           = var.task_name,
+      repo_url            = var.repo_url,
+      repo_tag            = var.repo_tag,
+      s3_results_bucket   = var.s3_results_bucket,
+      s3_key              = var.s3_key,
+      base64_team_map     = var.team_config.base64_team_map != null ? var.team_config.base64_team_map : "",
+      teams_api_base_url  = var.team_config.teams_api != null ? var.team_config.teams_api.base_url : "",
+      teams_api_key_param = var.team_config.teams_api != null ? var.team_config.teams_api.api_key_param : "",
+      collector_role_path = var.team_config.teams_api != null ? var.team_config.teams_api.collector_role_path : "",
+      awslogs_group       = local.awslogs_group,
+      awslogs_region      = data.aws_region.current.name,
+      cpu                 = var.ecs_cpu,
+      memory              = var.ecs_memory
     }
   )
 }

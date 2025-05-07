@@ -4,7 +4,7 @@ This repo contains a Terraform module for a scheduled ECS task that periodically
 
 * Run an ECS task that collects results from Security Hub and outputs them to a CSV file in a specified S3 bucket
 * Cloudwatch rule to run tasks on a cron-based cadence
-* Supports two methods of configuration: direct team mapping or Athena-based team lookup
+* Supports two methods of configuration: direct team mapping or Teams API-based team lookup
 
 ## Usage
 
@@ -29,16 +29,16 @@ module "security_hub_collector_runner" {
   s3_results_bucket = aws_s3_bucket.security_hub_collector.bucket
   s3_key            = ""
 
-  # Either team_map OR athena_config must be provided, but not both
-  # Using team map:
-  team_map = file("${path.module}/teammap.json")
+  # Exactly one of base64_team_map and teams_api must be provided
+  team_config = {
+    base64_team_map : base64encode(file("${path.module}/teammap.json"))
 
-  # Alternative configuration using Athena:
-  # athena_config = {
-  #   teams_table           = "my_teams_table"
-  #   query_output_location = "s3://my-bucket/athena-results/"
-  #   collector_role_path    = "my/role/path"
-  # }
+    teams_api : {
+      base_url            : "https://vshjmodi2c-vpce-0eea951a9e855a573.execute-api.us-east-1.amazonaws.com/teams-api-prod"
+      api_key_param       : "my-api-key-param"
+      collector_role_path : "my/role/path"
+    }
+  }
 }
 ```
 
@@ -56,20 +56,21 @@ module "security_hub_collector_runner" {
 | logs_cloudwatch_group_arn | CloudWatch log group arn for container logs |
 | ecs_cluster_arn | ECS cluster ARN to use for running this profile |
 | ecs_subnet_ids | Subnet IDs for the ECS tasks |
+| team_config | Configuration for team-to-account mapping |
 
-And exactly ONE of:
+`team_config` must contain exactly one of these keys:
 - `base64_team_map`: String containing team mapping configuration
-- `athena_config`: Object containing Athena configuration settings
+- `teams_api`: Object containing Teams API configuration settings
 
 ## Configuration Options
 
 ### Team Map Configuration
 When using `base64_team_map`, provide a base64 encoded JSON string containing team to account mappings. The JSON is decoded in the container for use with the security hub collector tool.
 
-### Athena Configuration
-When using `athena_config`, provide an object with the following required fields:
-- `teams_table`: Athena table name for teams data
-- `query_output_location`: S3 location for Athena query results
+### Teams API Configuration
+When using `teams_api`, provide an object with the following required fields:
+- `base_url`: Base URL of the Teams API
+- `api_key_param`: Name of SSM parameter containing the Teams API key
 - `collector_role_path`: Path of the IAM role that allows the Collector to access Security Hub
 
 ## Optional Parameters
@@ -92,6 +93,7 @@ When using `athena_config`, provide an object with the following required fields
 | Name | Description |
 |------|------------|
 | task_execution_role_arn | ARN for the IAM role executing the scanner |
+| task_security_group_id | ID of the task security group, for allowing traffic from the scanner |
 | ecs_cluster_arn | ARN for the ECS cluster |
 
 ## Requirements

@@ -10,9 +10,11 @@
       {"name": "S3_BUCKET", "value": "${s3_results_bucket}"},
       {"name": "S3_KEY", "value": "${s3_key}"},
       {"name": "BASE64_TEAM_MAP", "value": "${base64_team_map}"},
-      {"name": "ATHENA_TEAMS_TABLE", "value": "${athena_teams_table}"},
-      {"name": "QUERY_OUTPUT_LOCATION", "value": "${query_output_location}"},
+      {"name": "TEAMS_API_BASE_URL", "value": "${teams_api_base_url}"},
       {"name": "COLLECTOR_ROLE_PATH", "value": "${collector_role_path}"}
+    ],
+    "secrets": [
+      {"name": "TEAMS_API_KEY", "valueFrom": "${teams_api_key_param}"}
     ],
     "logConfiguration": {
       "logDriver": "awslogs",
