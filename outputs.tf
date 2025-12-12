@@ -13,7 +13,7 @@ output "task_security_group_id" {
   value       = aws_security_group.ecs_sg.id
 }
 
-output "task_definition_arn" {
-  description = "ARN of the ECS task definition"
-  value       = aws_ecs_task_definition.scheduled_task_def.arn
+output "task_definition_arn_without_revision" {
+  description = "ARN of the ECS task definition without revision"
+  value       = aws_ecs_task_definition.scheduled_task_def.arn_without_revision
 }
